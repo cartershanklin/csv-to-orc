@@ -1,5 +1,9 @@
 # Convert a CSV fle to ORCFile
 
+## Update
+
+Apache ORC now provides a native utility to convert CSV to ORC. Please use that instead. https://orc.apache.org/
+
 ## Using the standalone JAR
     java -jar bin/csv-to-orc.jar
 
