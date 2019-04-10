@@ -3,14 +3,13 @@ package com.example.orc;
 import org.apache.commons.cli.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hive.ql.exec.vector.ColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.BytesColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.DecimalColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.DoubleColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.LongColumnVector;
+import org.apache.hadoop.hive.ql.exec.vector.TimestampColumnVector;
 import org.apache.hadoop.hive.ql.exec.vector.VectorizedRowBatch;
 import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
-import org.apache.orc.CompressionKind;
 import org.apache.orc.TypeDescription;
 import org.apache.orc.OrcFile;
 import org.apache.orc.Writer;
@@ -19,6 +18,10 @@ import com.opencsv.CSVReader;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class CsvToOrc {
   public static void main(String[] args) throws IOException, InterruptedException {
@@ -120,6 +123,15 @@ public class CsvToOrc {
             batch.cols[j].noNulls = false;
           } else {
             ((LongColumnVector) batch.cols[j]).vector[batch.size] = Long.parseLong(nextLine[j]);
+          }
+        } else if (batch.cols[j] instanceof TimestampColumnVector) {
+          if (nullString.equals(nextLine[j])) {
+            batch.cols[j].isNull[batch.size] = true;
+            batch.cols[j].noNulls = false;
+          } else {
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_INSTANT;
+            final ZonedDateTime dateTime = ZonedDateTime.parse(nextLine[j], dateTimeFormatter.withZone(ZoneId.of("UTC")));
+            ((TimestampColumnVector) batch.cols[j]).set(batch.size, new Timestamp(dateTime.toInstant().toEpochMilli()));
           }
         }
       }
